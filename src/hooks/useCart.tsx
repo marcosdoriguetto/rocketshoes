@@ -23,28 +23,54 @@ const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
   const [cart, setCart] = useState<Product[]>(() => {
-    // const storagedCart = Buscar dados do localStorage
+    const storagedCart = localStorage.getItem('@RocketShoes:cart');
 
-    // if (storagedCart) {
-    //   return JSON.parse(storagedCart);
-    // }
+    if (storagedCart) {
+      return JSON.parse(storagedCart);
+    }
 
     return [];
   });
 
   const addProduct = async (productId: number) => {
-    try {
-      // TODO
+    try {      
+      let product = [...cart];
+      const productExists = product.find(product => product.id === productId);
+      console.log(productExists);
+      const currentAmount = productExists ? productExists.amount : 0;
+      const futureAmount = currentAmount + 1;
+
+      const stockProductResponse = await api.get(`/stock/${productId}`)
+      const amountProduct = stockProductResponse.data.amount;
+      if (futureAmount > amountProduct) {
+        toast.error('Quantidade solicitada fora de estoque');
+        return;
+      }
+
+      if (productExists) {
+        productExists.amount = futureAmount;
+      } else {
+        const fetchProductResponse = await api.get(`/products/${productId}`);
+        const productInformation = fetchProductResponse.data;
+        product.push({...productInformation, amount: 1});
+      }
+       
+      setCart(product);
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(product));
     } catch {
-      // TODO
+      toast.error('Erro na adição do produto');
     }
   };
 
   const removeProduct = (productId: number) => {
     try {
-      // TODO
+      const findProduct = cart.findIndex(product => product.id === productId);
+      let listProducts = [...cart];
+      listProducts.splice(findProduct, 1);
+
+      setCart(listProducts);
     } catch {
-      // TODO
+      toast.error('Produto não encontrado');
     }
   };
 
@@ -53,9 +79,11 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      // TODO
+      await api.put(`stock/${productId}`, {
+        amount: amount
+      })
     } catch {
-      // TODO
+      toast.error('')
     }
   };
 
