@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
-import { Product, Stock } from '../types';
+import { Product } from '../types';
 
 interface CartProviderProps {
   children: ReactNode;
@@ -36,7 +36,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     try {      
       let product = [...cart];
       const productExists = product.find(product => product.id === productId);
-      console.log(productExists);
       const currentAmount = productExists ? productExists.amount : 0;
       const futureAmount = currentAmount + 1;
 
@@ -64,13 +63,14 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const removeProduct = (productId: number) => {
     try {
-      const findProduct = cart.findIndex(product => product.id === productId);
       let listProducts = [...cart];
+      const findProduct = listProducts.findIndex(product => product.id === productId);
+      
       listProducts.splice(findProduct, 1);
-
       setCart(listProducts);
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(listProducts))
     } catch {
-      toast.error('Produto não encontrado');
+      toast.error('Erro na remoção do produto');
     }
   };
 
